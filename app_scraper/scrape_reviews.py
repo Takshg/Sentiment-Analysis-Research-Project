@@ -47,7 +47,7 @@ def scrape_google_play(app_id: str, lang: str, country: str , max_reviews: int) 
                     "user_name" : r.get("userName"),
                     "rating" : r.get("score"), 
                     "title" : None, 
-                    "text" : r.get("content"),
+                    "text" : r.get("comments"),
                     "version" : r.get("reviewCreatedVersion"), 
                     "thumbs_up" : r.get("thumbsUpCount"),
                     "reply_text" : (r.get("replyContent") or None),
@@ -129,7 +129,7 @@ def _normalize_apple_date(d) -> str:
     except Exception:
         return None 
 
-def filter_must_have(rows: List[Dict[str, Any]], pattern: re.Pattern) -> List[Dict[str, Any]]:
+def filter_reviews(rows: List[Dict[str, Any]], pattern: re.Pattern) -> List[Dict[str, Any]]:
     out = []
     for r in rows: 
         text = " ".join([str(r.get("title") or ""), str(r.get("text") or "")])
@@ -148,9 +148,9 @@ def parse_args():
                    help="Language for Google Play (e.g., en, en_US). Ignored for App Store.")
     p.add_argument("--max", type=int, default=500,
                    help="Max reviews to fetch per country.")
-    p.add_argument("--regex", default=None,
-                   help="Custom regex for filtering (defaults to broad 'must-have' variants).")
-    p.add_argument("--out", default="must_have_reviews.csv",
+    p.add_argument("--regex", default=".*",
+                   help="Custom regex for filtering (defaults to broad variants).")
+    p.add_argument("--out", default="reviews.csv",
                    help="Output CSV file path.")
     return p.parse_args()
 
@@ -164,11 +164,11 @@ def main():
             rows = scrape_google_play(args.app, args.lang, ctry, args.max)
         else:
             rows = scrape_app_store(args.app, ctry, args.max)
-        hits = filter_must_have(rows, pattern)
+        hits = filter_reviews(rows, pattern)
         all_hits.extend(hits)
 
     if not all_hits:
-        print("No 'must-have' reviews found with current settings.")
+        print("No reviews found with current settings.")
         headers = ["store","app_id","review_id","user_name","rating","title","text","version","thumbs_up",
                    "reply_text","reply_date","at","language","country"]
         with open(args.out, "w", newline="", encoding="utf-8") as f:
@@ -184,7 +184,7 @@ def main():
             df[col] = df[col].fillna("").str.replace(r"\s+", " ", regex=True).str.strip() 
 
     df.to_csv( args.out, index=False, encoding="utf-8")
-    print(f"Saved {len(df)} filtered 'must-have' reviews -> {args.out}")
+    print(f"Saved {len(df)} filtered reviews -> {args.out}")
 
 if __name__ == "__main__":
     main()
