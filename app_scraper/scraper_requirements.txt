@@ -1,0 +1,5 @@
+google-play-scraper==1.2.3
+app-store-scraper==0.3.5
+pandas==2.2.3
+tqdm==4.66.5
+tenacity==9.0.0
