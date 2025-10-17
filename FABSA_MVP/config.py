@@ -18,12 +18,21 @@ EXTRA_COLS = ["org_index", "industry"]
 
 # Task Space
 ASPECTS = [
-    'general-satisfaction', 'product-quality', 'price-value-for-money', 'delivery', 
-    'returns-refunds', 'customer-service', 'attitude-of-staff', 'account-access', 
-    'app-website', 'communications', 'competitor', 'phone'
+    "app-website",
+    "general-satisfaction",
+    "ease-of-use",
+    "attitude-of-staff",
+    "price-value-for-money",
+    "speed",
+    "competitor",
+    "account-access",
+    "discounts-promotions",
+    "phone",
+    "reviews",
+    "email",
 ]
 
-LABELS = ['absent', 'positive', 'negative', 'neutral']
+LABELS = ['negative', 'neutral', 'positive', 'absent']
 LABEL2ID = {l:i for i,l in enumerate(LABELS)}
 ID2LABEL = {i:l for l,i in LABEL2ID.items()}
 
