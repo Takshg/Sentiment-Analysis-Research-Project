@@ -12,9 +12,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 # Keywords for apps
 
-DEFAULT_REGEX = r"""
-\b(must[\s\-]?have|must\s*buy|must\s*download|essential\s+app|can'?t\s+live\s+without)\b
-"""
+DEFAULT_REGEX = r".*"
 KEY_RE = re.compile(DEFAULT_REGEX, flags=re.IGNORECASE|re.VERBOSE)
 
 # Google Play Scraping 
@@ -47,7 +45,7 @@ def scrape_google_play(app_id: str, lang: str, country: str , max_reviews: int) 
                     "user_name" : r.get("userName"),
                     "rating" : r.get("score"), 
                     "title" : None, 
-                    "text" : r.get("comments"),
+                    "text" : r.get("contents"),
                     "version" : r.get("reviewCreatedVersion"), 
                     "thumbs_up" : r.get("thumbsUpCount"),
                     "reply_text" : (r.get("replyContent") or None),
