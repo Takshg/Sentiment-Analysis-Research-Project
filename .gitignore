@@ -15,7 +15,8 @@ src/FABSA_MVP/outputs
 
 # Sensitive Data#
 ######################
-app_scraper/datamodels/
+app_scraper/data
+models/
 outputs/
 **/.ipynb_checkpoints/
 **/__pycache__/
