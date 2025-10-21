@@ -1,3 +1,9 @@
+"""
+DEPRECATED: The main workflow now lives in notebooks/fabsa_mvp.ipynb.
+"""
+import sys
+print("⚠️  Deprecated: use notebooks/fabsa_mvp.ipynb", file=sys.stderr)
+
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from config import MODEL_NAME, LABELS
 
