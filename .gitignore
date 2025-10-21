@@ -19,3 +19,7 @@ app_scraper/datamodels/
 outputs/
 **/.ipynb_checkpoints/
 **/__pycache__/
+models/
+outputs/
+**/.ipynb_checkpoints/
+**/__pycache__/
