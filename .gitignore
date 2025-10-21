@@ -9,10 +9,14 @@ ehthumbs.db
 Thumbs.db
 .venv/
 
-# Model outputs#
-######################
-/FABSA_MVP/outputs
-
 # Sensitive Data#
 ######################
 app_scraper/data
+
+# Model outputs#
+######################
+src/FABSA_MVP/outputs/
+models/
+outputs/
+**/.ipynb_checkpoints/
+**/__pycache__/
