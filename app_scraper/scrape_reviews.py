@@ -16,50 +16,45 @@ DEFAULT_REGEX = r".*"
 KEY_RE = re.compile(DEFAULT_REGEX, flags=re.IGNORECASE|re.VERBOSE)
 
 # Google Play Scraping 
-def scrape_google_play(app_id: str, lang: str, country: str , max_reviews: int) -> List[Dict[str, Any]]:
-    from google_play_scraper import Sort, reviews
+def scrape_google_play(app_id: str, lang: str, country: str, max_reviews: int) -> List[Dict[str, Any]]:
+    from google_play_scraper import Sort, reviews_all
+    from tqdm import tqdm
+
+    data = reviews_all(
+        app_id,
+        sleep_milliseconds=300,  
+        lang=lang,
+        country=country,
+        sort=Sort.NEWEST,         
+        filter_score_with=None
+    )
+
+    # Respect cap
+    if max_reviews is not None and max_reviews > 0:
+        data = data[:max_reviews]
 
     all_rows: List[Dict[str, Any]] = []
-    count_step = 200 #batch size per request
-    fetched = 0
-    token = None
+    with tqdm(total=len(data), desc=f"Google Play {app_id} [{country}/{lang}]") as pbar:
+        for r in data:
+            row = {
+                "store": "google_play",
+                "app_id": app_id,
+                "review_id": r.get("reviewId"),
+                "user_name": r.get("userName"),
+                "rating": r.get("score"),
+                "title": None,  
+                "text": r.get("content"), 
+                "version": r.get("reviewCreatedVersion"),
+                "thumbs_up": r.get("thumbsUpCount"),
+                "reply_text": (r.get("replyContent") or None),
+                "reply_date": _to_iso(r.get("repliedAt")),
+                "at": _to_iso(r.get("at")),
+                "language": lang,
+                "country": country,
+            }
+            all_rows.append(row)
+            pbar.update(1)
 
-    with tqdm(total = max_reviews, desc = f"Google Play {app_id}[{country}/{lang}]") as pbar:
-        while fetched < max_reviews:
-            batch_size = min(count_step, max_reviews-fetched)
-            chunk, token = reviews(
-                app_id, 
-                lang = lang, 
-                country = country, 
-                sort = Sort.NEWEST, 
-                count = batch_size, 
-                continuation_token=token
-            )
-            if not chunk: 
-                break
-            for r in chunk: 
-                row = {
-                    "store" : "google_play",
-                    "app_id" : app_id, 
-                    "review_id" : r.get("reviewId"),
-                    "user_name" : r.get("userName"),
-                    "rating" : r.get("score"), 
-                    "title" : None, 
-                    "text" : r.get("contents"),
-                    "version" : r.get("reviewCreatedVersion"), 
-                    "thumbs_up" : r.get("thumbsUpCount"),
-                    "reply_text" : (r.get("replyContent") or None),
-                    "reply_date" : _to_iso(r.get("repliedAt")),
-                    "at" : _to_iso(r.get("at")),
-                    "language" : lang, 
-                    "country" : country
-                }
-                all_rows.append(row)
-            fetched += len(chunk)
-            pbar.update(len(chunk))
-            if token is None:
-                break
-            time.sleep(0.3)
     return all_rows
 
 # App Store
@@ -71,41 +66,50 @@ def app_store_page(app_id: str, country: str, page: int):
     app.review(how_many=200, page = page)
     return app.reviews
 
-def scrape_app_store(app_id: str, country: str, max_reviews: int) -> List[Dict[str, Any]]:
-    all_rows: List[Dict[str, Any]] = []
-    count_step = 200 #batch size per request
-    page = 1
+def scrape_app_store(app_id: str, country: str, max_reviews: int) -> list[dict]:
+    import json, time, ssl, urllib.request, re
+    try:
+        import certifi
+        ctx = ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = ssl.create_default_context()
 
-    with tqdm(total = max_reviews, desc = f"App Store {app_id}[{country}]")as pbar:
-        while len(all_rows) < max_reviews:
-            try:
-                reviews = app_store_page(app_id, country, page)
-            except Exception as e:
-                break
-            if not reviews:
-                break
-            for r in reviews: 
-                row = {
-                    "store" : "app_store",
-                    "app_id" : app_id, 
-                    "review_id" : r.get("id"),
-                    "user_name" : r.get("userName") or r.get("user"),
-                    "rating" : r.get("rating"), 
-                    "title" : r.get("title"), 
-                    "text" : r.get("review") or r.get("text"),
-                    "version" : r.get("version"), 
-                    "thumbs_up" : None, # No like count
-                    "reply_text" : r.get("developerResponse"),
-                    "reply_date" : None,
-                    "at" : _normalize_apple_date(r.get("date")),
-                    "language" : None, 
-                    "country" : country
-                }
-                all_rows.append(row)
-            page += 1
-            pbar.update(len(reviews))
-            time.sleep(0.5)
-    return all_rows[:max_reviews]
+    def fetch_page(page: int):
+        url = f"https://itunes.apple.com/{country.lower()}/rss/customerreviews/page={page}/id={int(app_id)}/sortby=mostrecent/json"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, context=ctx, timeout=20) as resp:
+            return json.loads(resp.read().decode("utf-8", "ignore"))
+
+    out = []
+    page = 1
+    while len(out) < max_reviews:
+        try:
+            data = fetch_page(page)
+        except Exception:
+            break
+        entries = (data.get("feed", {}).get("entry") or [])
+        if len(entries) <= 1:
+            break
+        for rv in entries[1:]:
+            out.append({
+                "store": "app_store",
+                "app_id": str(app_id),
+                "review_id": (rv.get("id", {}) or {}).get("label"),
+                "user_name": ((rv.get("author", {}) or {}).get("name", {}) or {}).get("label"),
+                "rating": int(((rv.get("im:rating", {}) or {}).get("label") or "0")),
+                "title": (rv.get("title", {}) or {}).get("label"),
+                "text": (rv.get("content", {}) or {}).get("label"),
+                "version": (rv.get("im:version", {}) or {}).get("label"),
+                "thumbs_up": None,
+                "reply_text": None,
+                "reply_date": None,
+                "at": (rv.get("updated", {}) or {}).get("label"),
+                "language": None,
+                "country": country.lower(),
+            })
+        page += 1
+        time.sleep(0.4)
+    return out[:max_reviews]
 
 # Helpers
 
