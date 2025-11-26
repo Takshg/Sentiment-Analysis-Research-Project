@@ -20,3 +20,8 @@ models/
 outputs/
 **/.ipynb_checkpoints/
 **/__pycache__/
+
+# Test Files and Terminal CMDs#
+######################
+app_scraper/app-store-scrapper-test.py
+app_scraper/scraper_cmds.txt

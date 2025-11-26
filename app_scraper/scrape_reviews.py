@@ -57,7 +57,7 @@ def scrape_google_play(app_id: str, lang: str, country: str, max_reviews: int) -
 
     return all_rows
 
-# App Store
+#App Store
 @retry(stop = stop_after_attempt(3), wait = wait_exponential(multiplier=1, min =1 , max = 4))
 
 def app_store_page(app_id: str, country: str, page: int):
