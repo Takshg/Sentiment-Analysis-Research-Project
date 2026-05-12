@@ -7,7 +7,8 @@
 ## 📄 Start Here: Full Research Paper
 
 > **The full project paper is included in this repository:**
-> [`Interpretable_Fine_Grained_ABSA_Public_Sector_App_Reviews.pdf`](paper/Interpretable_Fine_Grained_ABSA_Public_Sector_App_Reviews.pdf)
+> [`Interpretable_Fine_Grained_ABSA_Public_Sector_App_Reviews.pdf`](Interpretable Fine-Grained ABSA of Public-Sector App Reviews with Integrated Gradients and LLM Justifications.pdf)
+)
 >
 > This README gives a mixed technical and non-technical overview of the project. The paper provides the complete research context, methodology, evaluation design, figures, and discussion of findings.
 
